@@ -1,0 +1,412 @@
+{
+  "name": "Battery Smart - Dashboard Actions",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "battery-smart-actions",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 300],
+      "id": "webhook-battery-smart-trigger",
+      "name": "Dashboard Action Webhook",
+      "webhookId": "battery-smart-actions-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "is-reroute",
+              "leftValue": "={{ $json.body.actionId }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [240, 200],
+      "id": "if-is-reroute",
+      "name": "Is Reroute?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "is-maintenance",
+              "leftValue": "={{ $json.body.actionId }}",
+              "rightValue": 2,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [240, 400],
+      "id": "if-is-maintenance",
+      "name": "Is Maintenance?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "is-rebalance",
+              "leftValue": "={{ $json.body.actionId }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [240, 600],
+      "id": "if-is-rebalance",
+      "name": "Is Rebalance?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "action-type",
+              "name": "actionType",
+              "value": "reroute",
+              "type": "string"
+            },
+            {
+              "id": "title",
+              "name": "title",
+              "value": "={{ $('Dashboard Action Webhook').item.json.body.title }}",
+              "type": "string"
+            },
+            {
+              "id": "payload",
+              "name": "payload",
+              "value": "={{ $('Dashboard Action Webhook').item.json.body.payload }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 120],
+      "id": "set-reroute-payload",
+      "name": "Set Reroute Payload"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "action-type-m",
+              "name": "actionType",
+              "value": "maintenance",
+              "type": "string"
+            },
+            {
+              "id": "title-m",
+              "name": "title",
+              "value": "={{ $('Dashboard Action Webhook').item.json.body.title }}",
+              "type": "string"
+            },
+            {
+              "id": "payload-m",
+              "name": "payload",
+              "value": "={{ $('Dashboard Action Webhook').item.json.body.payload }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 320],
+      "id": "set-maintenance-payload",
+      "name": "Set Maintenance Payload"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "action-type-r",
+              "name": "actionType",
+              "value": "rebalance",
+              "type": "string"
+            },
+            {
+              "id": "title-r",
+              "name": "title",
+              "value": "={{ $('Dashboard Action Webhook').item.json.body.title }}",
+              "type": "string"
+            },
+            {
+              "id": "payload-r",
+              "name": "payload",
+              "value": "={{ $('Dashboard Action Webhook').item.json.body.payload }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 520],
+      "id": "set-rebalance-payload",
+      "name": "Set Rebalance Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.twilio.com/2010-04-01/Accounts/{{ $env.TWILIO_ACCOUNT_SID }}/Messages.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "To",
+              "value": "={{ $env.TWILIO_DRIVER_PHONE || '+919876543210' }}"
+            },
+            {
+              "name": "From",
+              "value": "={{ $env.TWILIO_FROM_NUMBER }}"
+            },
+            {
+              "name": "Body",
+              "value": "=Battery Smart: Reroute to DEL-03. {{ $json.title }} - {{ $json.payload.subtitle || 'Low load, please divert.' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [720, 120],
+      "id": "http-reroute-action",
+      "name": "Twilio SMS (Reroute Drivers)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://{{ $env.JIRA_DOMAIN }}.atlassian.net/rest/api/3/issue",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"fields\": {\n    \"project\": { \"key\": \"{{ $env.JIRA_PROJECT_KEY || 'FLEET' }}\" },\n    \"issuetype\": { \"name\": \"{{ $env.JIRA_ISSUE_TYPE || 'Task' }}\" },\n    \"summary\": \"{{ $json.title }}\",\n    \"description\": {\n      \"type\": \"doc\",\n      \"version\": 1,\n      \"content\": [\n        { \"type\": \"paragraph\", \"content\": [{ \"type\": \"text\", \"text\": \"Root cause: {{ $json.payload.subtitle || 'Overheat / fault detected' }}\" }] }\n      ]\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [720, 320],
+      "id": "http-maintenance-action",
+      "name": "Jira Create Maintenance Ticket"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.INVENTORY_API_URL || 'https://api.batterysmart.io' }}/v1/inventory/transfer",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.INVENTORY_API_KEY }}"
+            },
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.INVENTORY_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"fromStation\": \"DEL-07\",\n  \"toStation\": \"DEL-05\",\n  \"quantity\": 20,\n  \"reason\": \"{{ $json.title }} - {{ $json.payload.subtitle || 'Inventory rebalance' }}\",\n  \"source\": \"battery-smart-dashboard\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [720, 520],
+      "id": "http-rebalance-action",
+      "name": "Inventory Transfer API (Rebalance)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DASHBOARD_WEBHOOK_URL || 'https://your-app.vercel.app/api/webhooks/n8n' }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"type\": \"action_completed\",\n  \"actionId\": {{ $('Dashboard Action Webhook').item.json.body.actionId }},\n  \"title\": \"{{ $('Dashboard Action Webhook').item.json.body.title }}\",\n  \"payload\": {{ JSON.stringify($('Dashboard Action Webhook').item.json.body.payload || {}) }},\n  \"completedAt\": \"{{ $now.toISO() }}\",\n  \"runId\": \"{{ $run.id }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [960, 300],
+      "id": "http-callback-dashboard",
+      "name": "Callback to Dashboard"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"ok\": true,\n  \"runId\": \"{{ $run.id }}\",\n  \"message\": \"Action processed\",\n  \"actionId\": {{ $('Dashboard Action Webhook').item.json.body.actionId }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 300],
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "Dashboard Action Webhook": {
+      "main": [
+        [
+          { "node": "Is Reroute?", "type": "main", "index": 0 },
+          { "node": "Is Maintenance?", "type": "main", "index": 0 },
+          { "node": "Is Rebalance?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Is Reroute?": {
+      "main": [
+        [{ "node": "Set Reroute Payload", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Is Maintenance?": {
+      "main": [
+        [{ "node": "Set Maintenance Payload", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Is Rebalance?": {
+      "main": [
+        [{ "node": "Set Rebalance Payload", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Set Reroute Payload": {
+      "main": [
+        [
+          { "node": "Twilio SMS (Reroute Drivers)", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Set Maintenance Payload": {
+      "main": [
+        [
+          { "node": "Jira Create Maintenance Ticket", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Set Rebalance Payload": {
+      "main": [
+        [
+          { "node": "Inventory Transfer API (Rebalance)", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Twilio SMS (Reroute Drivers)": {
+      "main": [
+        [{ "node": "Callback to Dashboard", "type": "main", "index": 0 }]
+      ]
+    },
+    "Jira Create Maintenance Ticket": {
+      "main": [
+        [{ "node": "Callback to Dashboard", "type": "main", "index": 0 }]
+      ]
+    },
+    "Inventory Transfer API (Rebalance)": {
+      "main": [
+        [{ "node": "Callback to Dashboard", "type": "main", "index": 0 }]
+      ]
+    },
+    "Callback to Dashboard": {
+      "main": [
+        [{ "node": "Respond to Webhook", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

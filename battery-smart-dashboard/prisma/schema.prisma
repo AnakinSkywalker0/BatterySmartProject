@@ -1,0 +1,71 @@
+// Battery Smart Admin – Fleet & stations
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Station {
+  id            String   @id @default(cuid())
+  code          String   @unique // e.g. DEL-01
+  name          String
+  region        String?
+  loadPct       Int      @default(0)   // 0-100
+  swapRate      Int      @default(0)   // current swaps/hr
+  surgePrice    Float    @default(1.0) // 1.0x to 2.5x
+  chargerHealth Float    @default(100) // 0-100%
+  status        String   @default("ok") // ok, degraded, critical
+  lat           Float?
+  lng           Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  alerts        Alert[]
+}
+
+model Battery {
+  id        String   @id @default(cuid())
+  code      String   @unique // e.g. BAT-01
+  soc       Float    @default(100) // 0-100%
+  soh       Float    @default(100) // 0-100%
+  temp      Float    @default(25)  // Celsius
+  voltage   Float    @default(52.0)
+  speed     Float    @default(0.0)
+  cycles    Int      @default(0)
+  status    String   @default("active") // active, charging, faulty
+  lat       Float?
+  lng       Float?
+  targetLat Float?
+  targetLng Float?
+  updatedAt DateTime @updatedAt
+}
+
+model Alert {
+  id        String   @id @default(cuid())
+  stationId String?
+  station   Station? @relation(fields: [stationId], references: [id], onDelete: SetNull)
+  stationCode String? // denormalized for display
+  type      String   // warning, error, info
+  message   String
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ActionLog {
+  id         String   @id @default(cuid())
+  actionId   Int      // 1=reroute, 2=maintenance, 3=rebalance
+  title      String
+  payload    String?  // JSON
+  runId      String?
+  source     String   @default("dashboard")
+  createdAt  DateTime @default(now())
+}
+
+model MetricSnapshot {
+  id            String   @id @default(cuid())
+  queueLengthMins Int?
+  chargerUptimePct Float?
+  inventoryChargedPct Float?
+  createdAt     DateTime @default(now())
+}
